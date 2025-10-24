@@ -10,27 +10,86 @@ class TicketMachineTest {
 
 	@BeforeEach
 	public void setUp() {
-		machine = new TicketMachine(PRICE); // On initialise l'objet à tester
+ 		machine = new TicketMachine(PRICE); // On initialise l'objet à tester
 	}
 
 	@Test
-	// On vérifie que le prix affiché correspond au paramètre passé lors de
-	// l'initialisation
-	// S1 : le prix affiché correspond à l’initialisation.
 	void priceIsCorrectlyInitialized() {
-		// Paramètres : valeur attendue, valeur effective, message si erreur
 		assertEquals(PRICE, machine.getPrice(), "Initialisation incorrecte du prix");
 	}
 
 	@Test
-	// S2 : la balance change quand on insère de l’argent
 	void insertMoneyChangesBalance() {
-		// GIVEN : une machine vierge (initialisée dans @BeforeEach)
-		// WHEN On insère de l'argent
 		machine.insertMoney(10);
 		machine.insertMoney(20);
-		// THEN La balance est mise à jour, les montants sont correctement additionnés
 		assertEquals(10 + 20, machine.getBalance(), "La balance n'est pas correctement mise à jour");
+	}
+
+	@Test
+	void printTicketIfPyementIsComplete() {
+		machine.insertMoney(PRICE -10);
+		assertFalse(machine.printTicket(), "Le ticket ne devrait pas être imprimé si le paiement est incomplet");
+	}
+
+	@Test
+	void printTicketIfPaymentIsComplete() {
+		machine.insertMoney(PRICE);
+		assertTrue(machine.printTicket(), "Le ticket devrait être imprimé si le paiement est complet");
+	}
+
+	@Test
+	void balanceDecreasesWhenTicketIsPrinted() {
+		machine.insertMoney(PRICE + 20);
+		machine.printTicket();
+		assertEquals(20, machine.getBalance(), "La balance n'est pas correctement mise à jour après impression du ticket");
+	}
+
+	@Test
+	void totalIncreasesWhenTicketIsPrinted() {
+		machine.insertMoney(PRICE + 20);
+		machine.printTicket();
+		assertEquals(PRICE, machine.getTotal(), "Le total n'est pas correctement mis à jour après impression du ticket");
+	}
+
+	@Test
+	void totalNotChangesWhenTicketIsNotPrinted() {
+		machine.insertMoney(PRICE - 10);
+		machine.printTicket();
+		assertEquals(0, machine.getTotal(), "Le total ne devrait pas changer si le ticket n'est pas imprimé");
+	}
+
+	@Test
+	void testRefundWorks() {
+		machine.insertMoney(30);
+		int refund = machine.refund();
+		assertEquals(30, refund, "Le montant remboursé est incorrect");
+		assertEquals(0, machine.getBalance(), "La balance devrait être remise à zéro après remboursement");
+	}
+
+	@Test
+	void testNotInsertNegativeOrZeroMoney() {
+		IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+			machine.insertMoney(0);
+		});
+		assertEquals("Amount must be positive", exception.getMessage());
+
+		exception = assertThrows(IllegalArgumentException.class, () -> {
+			machine.insertMoney(-10);
+		});
+		assertEquals("Amount must be positive", exception.getMessage());
+	}
+
+	@Test
+	void testNotNegativeOrZeroPrice() {
+		IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+			new TicketMachine(0);
+		});
+		assertEquals("Ticket price must be positive", exception.getMessage());
+
+		exception = assertThrows(IllegalArgumentException.class, () -> {
+			new TicketMachine(-10);
+		});
+		assertEquals("Ticket price must be positive", exception.getMessage());
 	}
 
 }
